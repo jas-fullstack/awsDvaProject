@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: User Management API
+
+Resources:
+
+  GetUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: dist/src/handlers/getUsers.handler
+      Runtime: nodejs22.x
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+              Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Users
+      Environment:
+        Variables:
+          USERS_TABLE: Users
+      Events:
+        GetUsers:
+          Type: Api
+          Properties:
+            Path: /getUsers
+            Method: GET
+
+  CreateUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: dist/src/handlers/createUsers.handler
+      Runtime: nodejs22.x
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Users
+      Environment:
+        Variables:
+          USERS_TABLE: Users
+      Events:
+        CreateUsers:
+          Type: Api
+          Properties:
+            Path: /createUsers
+            Method: POST
