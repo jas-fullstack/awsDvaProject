@@ -1,7 +1,33 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: User Management API
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+    - dev
+    - uat
+    - prod
+    Default: dev
+    Description: Deployment environment (dev, uat, or prod)
 Resources:
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: Users-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+  UsersApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName:
+        Ref: Environment
   GetUsersFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -15,14 +41,19 @@ Resources:
           Action:
           - dynamodb:Scan
           Resource:
-            Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Users
+            Fn::GetAtt:
+            - UsersTable
+            - Arn
       Environment:
         Variables:
-          USERS_TABLE: Users
+          USERS_TABLE:
+            Ref: UsersTable
       Events:
         GetUsers:
           Type: Api
           Properties:
+            RestApiId:
+              Ref: UsersApi
             Path: /getUsers
             Method: GET
     Metadata:
@@ -40,15 +71,29 @@ Resources:
           Action:
           - dynamodb:PutItem
           Resource:
-            Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Users
+            Fn::GetAtt:
+            - UsersTable
+            - Arn
       Environment:
         Variables:
-          USERS_TABLE: Users
+          USERS_TABLE:
+            Ref: UsersTable
       Events:
         CreateUsers:
           Type: Api
           Properties:
+            RestApiId:
+              Ref: UsersApi
             Path: /createUsers
             Method: POST
     Metadata:
       SamResourceId: CreateUsersFunction
+Outputs:
+  ApiUrl:
+    Description: API Gateway invoke URL for this environment
+    Value:
+      Fn::Sub: https://${UsersApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+  UsersTableName:
+    Description: DynamoDB table name for this environment
+    Value:
+      Ref: UsersTable

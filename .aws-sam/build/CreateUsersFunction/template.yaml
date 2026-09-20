@@ -3,7 +3,33 @@ Transform: AWS::Serverless-2016-10-31
 
 Description: User Management API
 
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - dev
+      - uat
+      - prod
+    Default: dev
+    Description: Deployment environment (dev, uat, or prod)
+
 Resources:
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub Users-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
+  UsersApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
 
   GetUsersFunction:
     Type: AWS::Serverless::Function
@@ -17,14 +43,15 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:Scan
-              Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Users
+              Resource: !GetAtt UsersTable.Arn
       Environment:
         Variables:
-          USERS_TABLE: Users
+          USERS_TABLE: !Ref UsersTable
       Events:
         GetUsers:
           Type: Api
           Properties:
+            RestApiId: !Ref UsersApi
             Path: /getUsers
             Method: GET
 
@@ -40,13 +67,22 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:PutItem
-              Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Users
+              Resource: !GetAtt UsersTable.Arn
       Environment:
         Variables:
-          USERS_TABLE: Users
+          USERS_TABLE: !Ref UsersTable
       Events:
         CreateUsers:
           Type: Api
           Properties:
+            RestApiId: !Ref UsersApi
             Path: /createUsers
             Method: POST
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway invoke URL for this environment
+    Value: !Sub https://${UsersApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+  UsersTableName:
+    Description: DynamoDB table name for this environment
+    Value: !Ref UsersTable

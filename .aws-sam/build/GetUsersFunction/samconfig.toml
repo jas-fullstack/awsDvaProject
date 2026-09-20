@@ -1,10 +1,41 @@
 version = 0.1
 
 [default.deploy.parameters]
-stack_name = "awsProject"
+stack_name = "awsProject-dev"
 resolve_s3 = true
-s3_prefix = "awsProject"
+s3_prefix = "awsProject-dev"
 region = "ap-south-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 disable_rollback = false
+parameter_overrides = "Environment=dev"
+
+[dev.deploy.parameters]
+stack_name = "awsProject-dev"
+resolve_s3 = true
+s3_prefix = "awsProject-dev"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = false
+parameter_overrides = "Environment=dev"
+
+[uat.deploy.parameters]
+stack_name = "awsProject-uat"
+resolve_s3 = true
+s3_prefix = "awsProject-uat"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = false
+parameter_overrides = "Environment=uat"
+
+[prod.deploy.parameters]
+stack_name = "awsProject-prod"
+resolve_s3 = true
+s3_prefix = "awsProject-prod"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = false
+parameter_overrides = "Environment=prod"
